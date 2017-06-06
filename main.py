@@ -13,23 +13,22 @@ parser.add_argument('--timeout', type=int, default=10, help='Timeout')
 args = parser.parse_args()
 agent = 'Desperado'
 
-def dowload_source(args):
+def dowload_source(source, timeout, chunk_size, agent):
     local_filename = 'test.html'
     headers = {
     'User-Agent': agent
     }
-    with closing(requests.get(args.source, headers=headers, stream=True, timeout=args.timeout)) as r:
+    with closing(requests.get(source, headers=headers, stream=True, timeout=timeout)) as r:
         if 'text/html' in r.headers['Content-Type']:
-            with open(local_filename, 'wb') as output_file:
-                for chunk in r.iter_content(args.chunk_size):
-                    if chunk:
-                        output_file.write(chunk)
-                        output_file.close()
-                        print("Ok")
+            for chunk in r.iter_content(chunk_size):
+                if chunk:
+                    print("Ok")
+                    return chunk
+
         else:
             print ('This is not text!')
 
-def check_robots(source):
+def check_robots(source, agent):
     url = urlparse(source).scheme + "://" + urlparse(source).netloc + "/robots.txt"
     print (url)
     rp = urllib.robotparser.RobotFileParser()
@@ -38,5 +37,6 @@ def check_robots(source):
     return rp.can_fetch(agent, source)
 
 
-dowload_source(args)
-print (check_robots(args.source))
+
+if check_robots(args.source, agent):
+    dowload_source(args.source, args.timeout, args.chunk_size, agent)

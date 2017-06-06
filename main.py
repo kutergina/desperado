@@ -24,9 +24,10 @@ def dowload_source(source, timeout, chunk_size, agent):
                 if chunk:
                     print("Ok")
                     return chunk
-
+                else:
+                    print ("Page is empty")
         else:
-            print ('This is not text!')
+            print ("This is not text!")
 
 def check_robots(source, agent):
     url = urlparse(source).scheme + "://" + urlparse(source).netloc + "/robots.txt"

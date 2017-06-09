@@ -22,8 +22,8 @@ def dowload_source(source, timeout, chunk_size, agent):
         if 'text/html' in r.headers['Content-Type']:
             for chunk in r.iter_content(chunk_size):
                 if chunk:
-                    print("Ok")
-                    return chunk
+                    #это ведь наверное не правильно так делать?
+                    return str(chunk)
                 else:
                     print ("Page is empty")
         else:
@@ -31,13 +31,32 @@ def dowload_source(source, timeout, chunk_size, agent):
 
 def check_robots(source, agent):
     url = urlparse(source).scheme + "://" + urlparse(source).netloc + "/robots.txt"
-    print (url)
     rp = urllib.robotparser.RobotFileParser()
     rp.set_url(url)
     rp.read()
     return rp.can_fetch(agent, source)
 
 
+from html.parser import HTMLParser
+#а это я просто скопировала и не доконца понимаю, что тут происходит
+#может можно проще как-то сделать?
+class MyHTMLParser(HTMLParser):
+    #например, вот в этой части (зачем все это)
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.links = []  
+  #а здесь вопросов нет) все понятно
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'a':
+            try:
+                self.links.append(attrs['href'])
+            except:
+                pass
 
+    
 if check_robots(args.source, agent):
-    dowload_source(args.source, args.timeout, args.chunk_size, agent)
+    data = dowload_source(args.source, args.timeout, args.chunk_size, agent)
+    parser = MyHTMLParser()
+    parser.feed(data)
+ 

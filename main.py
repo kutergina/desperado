@@ -20,10 +20,9 @@ def dowload_source(source, timeout, chunk_size, agent):
     }
     with closing(requests.get(source, headers=headers, stream=True, timeout=timeout)) as r:
         if 'text/html' in r.headers['Content-Type']:
-            for chunk in r.iter_content(chunk_size):
+            for chunk in r.iter_content(chunk_size, decode_unicode=True):
                 if chunk:
-                    #это ведь наверное не правильно так делать?
-                    return str(chunk)
+                    return chunk
                 else:
                     print ("Page is empty")
         else:
@@ -38,14 +37,12 @@ def check_robots(source, agent):
 
 
 from html.parser import HTMLParser
-#а это я просто скопировала и не доконца понимаю, что тут происходит
-#может можно проще как-то сделать?
+
 class MyHTMLParser(HTMLParser):
-    #например, вот в этой части (зачем все это)
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self.links = []  
-  #а здесь вопросов нет) все понятно
+    def __init__(self, source_name):
+        super().__init__()
+        self.links = []
+        self.source_name = source_name
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if tag == 'a':
@@ -53,10 +50,26 @@ class MyHTMLParser(HTMLParser):
                 self.links.append(attrs['href'])
             except:
                 pass
+#Удаление дубликатов
+def unique(lst):
+    seen = set()
+    result = []
+    for x in lst:
+        if x in seen:
+            continue
+        seen.add(x)
+        result.append(x)
+    return result
 
-    
+def write_to_file(lst):
+     f = open('links.txt', 'w')
+     f.write('\n'.join(sorted(lst)))
+     f.close()
+
 if check_robots(args.source, agent):
     data = dowload_source(args.source, args.timeout, args.chunk_size, agent)
-    parser = MyHTMLParser()
+    parser = MyHTMLParser(args.source)
     parser.feed(data)
- 
+    print (parser.links)
+    print (parser.source_name)
+    write_to_file (unique(parser.links))
